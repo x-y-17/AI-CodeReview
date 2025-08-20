@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // scripts/pre-commit-ai-review.js
 import dotenv from 'dotenv'
 import AICodeReviewer from './ai-code-review.js'
