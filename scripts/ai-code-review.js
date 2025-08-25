@@ -3,14 +3,36 @@ import OpenAI from 'openai'
 import GitUtils from './git-utils.js'
 
 class AICodeReviewer {
-  constructor() {
+  constructor(options = {}) {
     this.gitUtils = new GitUtils()
 
-    // 初始化国内AI客户端 (Moonshot Kimi)
-    this.openai = new OpenAI({
-      apiKey: process.env.MOONSHOT_API_KEY,
-      baseURL: 'https://api.moonshot.cn/v1'
-    })
+    // 设置系统提示词
+    this.systemPrompt = options.systemPrompt || this.getDefaultSystemPrompt()
+
+    // 尝试初始化国内AI客户端 (Moonshot Kimi)
+    try {
+      this.openai = new OpenAI({
+        apiKey: process.env.MOONSHOT_API_KEY,
+        baseURL: 'https://api.moonshot.cn/v1'
+      })
+    } catch (error) {
+      console.warn('⚠️  OpenAI 客户端初始化失败:', error.message)
+      this.openai = null
+    }
+  }
+
+  /**
+   * 获取默认系统提示词
+   */
+  getDefaultSystemPrompt() {
+    return `你是一个专业的代码审查专家。请分析提供的代码变更，重点关注：
+1. 代码质量和最佳实践
+2. 潜在的bug和安全问题
+3. 性能优化建议
+4. 代码可读性和维护性
+5. 测试覆盖率建议
+
+请用中文回复，格式简洁明了。如果没有问题，请简单确认代码看起来不错。`
   }
 
   /**
@@ -65,19 +87,17 @@ class AICodeReviewer {
     const prompt = this.buildAnalysisPrompt(filename, diff, fullContent)
 
     try {
+      // 检查 OpenAI 客户端是否可用
+      if (!this.openai) {
+        throw new Error('OpenAI 客户端未初始化或初始化失败')
+      }
+
       const response = await this.openai.chat.completions.create({
         model: 'moonshot-v1-8k',
         messages: [
           {
             role: 'system',
-            content: `你是一个专业的代码审查专家。请分析提供的代码变更，重点关注：
-1. 代码质量和最佳实践
-2. 潜在的bug和安全问题
-3. 性能优化建议
-4. 代码可读性和维护性
-5. 测试覆盖率建议
-
-请用中文回复，格式简洁明了。如果没有问题，请简单确认代码看起来不错。`
+            content: this.systemPrompt
           },
           {
             role: 'user',
@@ -183,7 +203,8 @@ ${fullContent.length > 2000 ? fullContent.substring(0, 2000) + '...' : fullConte
       rl.question(message, (answer) => {
         rl.close()
         input.destroy() // 确保完全关闭输入流
-        resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes')
+        const shouldContinue = answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes'
+        resolve(shouldContinue)
       })
     })
   }
