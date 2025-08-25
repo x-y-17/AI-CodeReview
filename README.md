@@ -32,6 +32,7 @@ npm install --save-dev @x648525845/ai-codereview
 创建 `.env` 文件并添加你的API密钥：
 
 ```env
+# 必有!
 MOONSHOT_API_KEY=你的Moonshot API密钥
 # 可选：自定义AI审查提示词
 AI_REVIEW_SYSTEM_PROMPT=你的自定义提示词内容
