@@ -25,6 +25,10 @@ npm install -g @x648525845/ai-codereview
 npm install --save-dev @x648525845/ai-codereview
 ```
 
+## node版本
+
+需要>=18
+
 ## 快速开始
 
 ### 1. 配置环境变量
