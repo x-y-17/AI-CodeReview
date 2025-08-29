@@ -253,3 +253,12 @@ MIT License
 - 支持基本的AI代码审查功能
 - Git hooks集成
 - Moonshot API支持
+
+### v1.1.0
+
+- 支持自定义配置提示词
+
+### v1.2.0
+
+- 支持自定义配置模型
+- 支持自定义配置maxTokens && temperature
