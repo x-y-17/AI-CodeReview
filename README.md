@@ -33,14 +33,28 @@ npm install --save-dev @x648525845/ai-codereview
 
 ### 1. 配置环境变量
 
-创建 `.env` 文件并添加你的API密钥：
+创建 `.env` 文件并添加你的API密钥和配置：
 
 ```env
-# 必有!
+# 必须配置 - API密钥 (优先使用 API_KEY，如未设置则使用 MOONSHOT_API_KEY)
+API_KEY=你的AI服务API密钥
+# 或者使用 Moonshot 专用的环境变量
 MOONSHOT_API_KEY=你的Moonshot API密钥
+
+# 可选配置 - AI模型参数
+AI_BASE_URL=https://api.moonshot.cn/v1          # AI服务基础URL
+AI_MODEL=moonshot-v1-8k                         # 使用的模型名称
+AI_MAX_TOKENS=1000                              # 最大token数量
+AI_TEMPERATURE=0.3                              # 温度参数 (0-1)
+
 # 可选：自定义AI审查提示词
 AI_REVIEW_SYSTEM_PROMPT=你的自定义提示词内容
 ```
+
+> **配置优先级说明：**
+>
+> - API密钥优先级：构造函数参数 > `API_KEY` 环境变量 > `MOONSHOT_API_KEY` 环境变量
+> - 其他配置参数优先级：构造函数参数 > 对应环境变量 > 默认值
 
 ### 2. 设置Git Hook
 
@@ -93,13 +107,20 @@ git commit -m "你的提交信息"
 ```javascript
 import { AICodeReviewer } from 'ai-codereview'
 
-// 使用默认提示词
+// 使用默认配置
 const reviewer = new AICodeReviewer()
 
-// 或者使用自定义提示词
+// 自定义配置
 const customReviewer = new AICodeReviewer({
-  systemPrompt: '你是一个专注于安全性的代码审查专家，请特别关注安全漏洞和潜在威胁...'
+  systemPrompt: '你是一个专注于安全性的代码审查专家，请特别关注安全漏洞和潜在威胁...',
+  baseURL: 'https://api.openai.com/v1', // 使用其他AI服务
+  model: 'gpt-4', // 使用不同模型
+  maxTokens: 2000, // 增加token限制
+  temperature: 0.1 // 降低随机性
 })
+
+// 显示当前配置
+customReviewer.displayConfig()
 
 // 分析代码变更
 const result = await reviewer.analyzeChanges()
@@ -124,6 +145,11 @@ new AICodeReviewer(options)
 
 - `options` (Object, 可选): 配置选项
   - `systemPrompt` (String, 可选): 自定义系统提示词。如果不提供，将使用默认的代码审查提示词。
+  - `apiKey` (String, 可选): AI服务API密钥。如果不提供，将使用环境变量 `API_KEY`。
+  - `baseURL` (String, 可选): AI服务基础URL。默认: `https://api.moonshot.cn/v1`
+  - `model` (String, 可选): 使用的AI模型名称。默认: `moonshot-v1-8k`
+  - `maxTokens` (Number, 可选): 最大token数量。默认: `1000`
+  - `temperature` (Number, 可选): 温度参数 (0-1)。默认: `0.3`
 
 #### 方法
 
@@ -131,6 +157,8 @@ new AICodeReviewer(options)
 - `analyzeFile(filename)`: 分析单个文件
 - `displayFeedback(feedback)`: 显示分析反馈
 - `askUserConfirmation(hasIssues)`: 询问用户是否继续提交
+- `getConfig()`: 获取当前配置信息
+- `displayConfig()`: 显示当前配置信息
 
 ### GitUtils
 
@@ -158,9 +186,12 @@ Git操作工具类。
 
 ### 环境变量
 
-- `MOONSHOT_API_KEY`: Moonshot API密钥（必需）
-- `OPENAI_API_KEY`: OpenAI API密钥（可选，如果使用OpenAI）
-- `AI_REVIEW_MODEL`: 使用的模型名称（默认：moonshot-v1-8k）
+- `API_KEY`: 通用AI服务API密钥（推荐使用）
+- `MOONSHOT_API_KEY`: Moonshot API密钥（如果未设置 API_KEY 则使用此项）
+- `AI_BASE_URL`: AI服务基础URL（可选，默认：https://api.moonshot.cn/v1）
+- `AI_MODEL`: 使用的模型名称（可选，默认：moonshot-v1-8k）
+- `AI_MAX_TOKENS`: 最大token数量（可选，默认：1000）
+- `AI_TEMPERATURE`: 温度参数（可选，默认：0.3）
 - `AI_REVIEW_SYSTEM_PROMPT`: 自定义AI审查提示词（可选，如不设置则使用默认提示词）
 
 ## 故障排除

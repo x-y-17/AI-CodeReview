@@ -9,14 +9,23 @@ class AICodeReviewer {
     // 设置系统提示词
     this.systemPrompt = options.systemPrompt || this.getDefaultSystemPrompt()
 
-    // 尝试初始化国内AI客户端 (Moonshot Kimi)
+    // 配置 AI 模型参数 - 支持环境变量和构造函数参数
+    this.config = {
+      apiKey: options.apiKey || process.env.API_KEY || process.env.MOONSHOT_API_KEY,
+      baseURL: options.baseURL || process.env.AI_BASE_URL || 'https://api.moonshot.cn/v1',
+      model: options.model || process.env.AI_MODEL || 'moonshot-v1-8k',
+      maxTokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 1000,
+      temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.3
+    }
+
+    // 尝试初始化AI客户端
     try {
       this.openai = new OpenAI({
-        apiKey: process.env.MOONSHOT_API_KEY,
-        baseURL: 'https://api.moonshot.cn/v1'
+        apiKey: this.config.apiKey,
+        baseURL: this.config.baseURL
       })
     } catch (error) {
-      console.warn('⚠️  OpenAI 客户端初始化失败:', error.message)
+      console.warn('⚠️  AI 客户端初始化失败:', error.message)
       this.openai = null
     }
   }
@@ -33,6 +42,32 @@ class AICodeReviewer {
 5. 测试覆盖率建议
 
 请用中文回复，格式简洁明了。如果没有问题，请简单确认代码看起来不错。`
+  }
+
+  /**
+   * 获取当前配置信息
+   */
+  getConfig() {
+    return {
+      baseURL: this.config.baseURL,
+      model: this.config.model,
+      maxTokens: this.config.maxTokens,
+      temperature: this.config.temperature,
+      hasApiKey: !!this.config.apiKey
+    }
+  }
+
+  /**
+   * 显示当前配置信息
+   */
+  displayConfig() {
+    const config = this.getConfig()
+    console.log('🔧 当前 AI 配置:')
+    console.log(`   Base URL: ${config.baseURL}`)
+    console.log(`   Model: ${config.model}`)
+    console.log(`   Max Tokens: ${config.maxTokens}`)
+    console.log(`   Temperature: ${config.temperature}`)
+    console.log(`   API Key: ${config.hasApiKey ? '已配置' : '未配置'}`)
   }
 
   /**
@@ -93,7 +128,7 @@ class AICodeReviewer {
       }
 
       const response = await this.openai.chat.completions.create({
-        model: 'moonshot-v1-8k',
+        model: this.config.model,
         messages: [
           {
             role: 'system',
@@ -104,8 +139,8 @@ class AICodeReviewer {
             content: prompt
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.3
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature
       })
 
       return {
