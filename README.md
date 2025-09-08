@@ -8,6 +8,7 @@
 - 🚀 **Git Hooks集成**: 无缝集成到Git工作流，在提交前自动执行代码审查
 - 🌟 **支持多种AI服务**: 默认支持Moonshot Kimi，可扩展其他OpenAI兼容服务
 - 📋 **详细反馈报告**: 提供代码质量、安全性、性能等多维度分析
+- 📄 **多种输出方式**: 支持生成Markdown报告文件或控制台输出
 - 🛠️ **高度可配置**: 支持自定义分析规则和反馈格式
 - 💬 **中文友好**: 完整的中文界面和反馈
 
@@ -25,9 +26,47 @@ npm install -g @x648525845/ai-codereview
 npm install --save-dev @x648525845/ai-codereview
 ```
 
-## node版本
+## Node.js 版本要求
 
-需要>=18
+需要 Node.js >= 18
+
+## 配置 Git Hooks (Husky)
+
+本工具推荐使用 [Husky](https://typicode.github.io/husky/) 来管理 Git hooks。
+
+### 初始化 Husky
+
+如果项目还没有配置 Husky，请先初始化：
+
+```bash
+# 安装 husky
+npm install --save-dev husky
+
+# 初始化 husky
+npx husky install
+
+# 设置 package.json 脚本（可选，用于自动安装）
+npm pkg set scripts.prepare="husky install"
+```
+
+### 添加 pre-commit hook
+
+```bash
+# 添加 pre-commit hook
+npx husky add .husky/pre-commit "npx @x648525845/ai-codereview"
+```
+
+**重要提示：** 确保 hook 脚本具有正确的退出码处理。如果你遇到提交无法被阻止的问题，可以在 `.husky/pre-commit` 文件中添加：
+
+```bash
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx @x648525845/ai-codereview
+exit $?
+```
+
+更多 Husky 配置和使用方法，请参考：[Husky 官方文档](https://typicode.github.io/husky/)
 
 ## 快速开始
 
@@ -49,6 +88,9 @@ AI_TEMPERATURE=0.3                              # 温度参数 (0-1)
 
 # 可选：自定义AI审查提示词
 AI_REVIEW_SYSTEM_PROMPT=你的自定义提示词内容
+
+# 可选：输出模式配置
+AI_OUTPUT_MODE=file                             # 输出方式：file(生成文件，默认) 或 console(控制台输出)
 ```
 
 > **配置优先级说明：**
@@ -56,29 +98,7 @@ AI_REVIEW_SYSTEM_PROMPT=你的自定义提示词内容
 > - API密钥优先级：构造函数参数 > `API_KEY` 环境变量 > `MOONSHOT_API_KEY` 环境变量
 > - 其他配置参数优先级：构造函数参数 > 对应环境变量 > 默认值
 
-### 2. 设置Git Hook
-
-在项目根目录运行：
-
-```bash
-# 初始化husky
-npx husky install
-
-# 添加pre-commit hook
-npx husky add .husky/pre-commit "npx @x648525845/ai-codereview"
-```
-
-**重要提示：** 确保 hook 脚本具有正确的退出码处理。如果你遇到提交无法被阻止的问题，可以在 `.husky/pre-commit` 文件中添加：
-
-```bash
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-npx @x648525845/ai-codereview
-exit $?
-```
-
-### 3. 使用
+### 2. 使用
 
 现在每次提交代码时，AI会自动分析你的变更：
 
@@ -86,6 +106,39 @@ exit $?
 git add .
 git commit -m "你的提交信息"
 # AI代码审查会自动执行
+```
+
+### 输出方式
+
+工具支持两种输出方式：
+
+#### 📄 文件输出（默认）
+
+默认会在项目根目录生成详细的Markdown报告文件：
+
+```bash
+# 默认行为，生成报告文件
+git commit -m "feat: 添加新功能"
+# 会生成类似 ai-code-review-2024-01-15-14-30-25.md 的报告文件
+```
+
+生成的报告文件包含：
+
+- 📊 审查概览和统计信息
+- 📋 每个文件的详细分析结果
+- ⚠️ 问题标识和建议
+- 🕒 时间戳和工具信息
+
+#### 💻 控制台输出
+
+如需在控制台直接查看结果：
+
+```bash
+# 通过环境变量设置
+AI_OUTPUT_MODE=console
+
+# 或者在 .env 文件中设置
+# AI_OUTPUT_MODE=console
 ```
 
 ## 默认的提示词
@@ -99,6 +152,17 @@ git commit -m "你的提交信息"
 5. 测试覆盖率建议
 
 请用中文回复，格式简洁明了。如果没有问题，请简单确认代码看起来不错。`
+
+## 环境变量配置总结
+
+- `API_KEY`: 通用AI服务API密钥（推荐使用）
+- `MOONSHOT_API_KEY`: Moonshot API密钥（如果未设置 API_KEY 则使用此项）
+- `AI_BASE_URL`: AI服务基础URL（可选，默认：https://api.moonshot.cn/v1）
+- `AI_MODEL`: 使用的模型名称（可选，默认：moonshot-v1-8k）
+- `AI_MAX_TOKENS`: 最大token数量（可选，默认：1000）
+- `AI_TEMPERATURE`: 温度参数（可选，默认：0.3）
+- `AI_REVIEW_SYSTEM_PROMPT`: 自定义AI审查提示词（可选，如不设置则使用默认提示词）
+- `AI_OUTPUT_MODE`: 输出方式（可选，默认：file，可选值：file/console）
 
 ## 编程方式使用
 
@@ -116,7 +180,8 @@ const customReviewer = new AICodeReviewer({
   baseURL: 'https://api.openai.com/v1', // 使用其他AI服务
   model: 'gpt-4', // 使用不同模型
   maxTokens: 2000, // 增加token限制
-  temperature: 0.1 // 降低随机性
+  temperature: 0.1, // 降低随机性
+  outputMode: 'console' // 设置输出方式：'file' 或 'console'
 })
 
 // 显示当前配置
@@ -125,8 +190,8 @@ customReviewer.displayConfig()
 // 分析代码变更
 const result = await reviewer.analyzeChanges()
 
-// 显示反馈
-reviewer.displayFeedback(result.feedback)
+// 显示反馈（现在是异步方法）
+await reviewer.displayFeedback(result.feedback)
 ```
 
 ## API 文档
@@ -150,12 +215,14 @@ new AICodeReviewer(options)
   - `model` (String, 可选): 使用的AI模型名称。默认: `moonshot-v1-8k`
   - `maxTokens` (Number, 可选): 最大token数量。默认: `1000`
   - `temperature` (Number, 可选): 温度参数 (0-1)。默认: `0.3`
+  - `outputMode` (String, 可选): 输出方式。可选值: `'file'`(生成文件，默认) 或 `'console'`(控制台输出)
 
 #### 方法
 
 - `analyzeChanges()`: 分析Git暂存区的代码变更
 - `analyzeFile(filename)`: 分析单个文件
-- `displayFeedback(feedback)`: 显示分析反馈
+- `displayFeedback(feedback)`: 显示分析反馈（异步方法，根据配置选择文件或控制台输出）
+- `generateReportFile(feedback)`: 生成Markdown格式的审查报告文件
 - `askUserConfirmation(hasIssues)`: 询问用户是否继续提交
 - `getConfig()`: 获取当前配置信息
 - `displayConfig()`: 显示当前配置信息
@@ -183,16 +250,6 @@ Git操作工具类。
 - Python (`.py`)
 - Java (`.java`)
 - C/C++ (`.c`, `.cpp`, `.h`, `.hpp`)
-
-### 环境变量
-
-- `API_KEY`: 通用AI服务API密钥（推荐使用）
-- `MOONSHOT_API_KEY`: Moonshot API密钥（如果未设置 API_KEY 则使用此项）
-- `AI_BASE_URL`: AI服务基础URL（可选，默认：https://api.moonshot.cn/v1）
-- `AI_MODEL`: 使用的模型名称（可选，默认：moonshot-v1-8k）
-- `AI_MAX_TOKENS`: 最大token数量（可选，默认：1000）
-- `AI_TEMPERATURE`: 温度参数（可选，默认：0.3）
-- `AI_REVIEW_SYSTEM_PROMPT`: 自定义AI审查提示词（可选，如不设置则使用默认提示词）
 
 ## 故障排除
 
@@ -262,3 +319,11 @@ MIT License
 
 - 支持自定义配置模型
 - 支持自定义配置maxTokens && temperature
+
+### v1.3.0
+
+- 🆕 **新增多种输出方式**: 支持生成Markdown报告文件或控制台输出
+- 📄 **文件输出功能**: 默认在根目录生成详细的代码审查报告文件
+- ⚙️ **新增配置选项**: `outputMode` 和 `AI_OUTPUT_MODE` 环境变量
+- 🎨 **优化报告格式**: 包含统计信息、问题标识和时间戳
+- 🔧 **改进API**: `displayFeedback` 方法现在是异步的，支持文件生成

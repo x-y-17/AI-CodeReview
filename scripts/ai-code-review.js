@@ -15,7 +15,9 @@ class AICodeReviewer {
       baseURL: options.baseURL || process.env.AI_BASE_URL || 'https://api.moonshot.cn/v1',
       model: options.model || process.env.AI_MODEL || 'moonshot-v1-8k',
       maxTokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 1000,
-      temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.3
+      temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.3,
+      // 输出模式配置：'file' 生成文件（默认），'console' 控制台输出
+      outputMode: options.outputMode || process.env.AI_OUTPUT_MODE || 'file'
     }
 
     // 尝试初始化AI客户端
@@ -189,15 +191,98 @@ ${fullContent.length > 2000 ? fullContent.substring(0, 2000) + '...' : fullConte
   }
 
   /**
+   * 生成代码审查报告文件
+   */
+  async generateReportFile(feedback) {
+    const fs = await import('fs')
+    const path = await import('path')
+
+    // 获取当前时间戳
+    const now = new Date()
+    const timestamp = now
+      .toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+      .replace(/\//g, '-') // 只替换斜杠为短横线，保留空格和冒号
+      .replace(/\s/g, '_') // 将空格替换为下划线，避免文件名问题
+
+    // 生成文件名
+    const filename = `AI_CODE_REVIEW-${timestamp}.md`
+    const filepath = path.join(process.cwd(), filename)
+
+    // 构建报告内容
+    let reportContent = `# AI 代码审查报告\n\n`
+    reportContent += `**生成时间**: ${now.toLocaleString('zh-CN')}\n`
+    reportContent += `**审查文件数**: ${feedback.length}\n\n`
+
+    if (feedback.length === 0) {
+      reportContent += `## 审查结果\n\n✅ **代码分析完成，未发现问题**\n\n`
+      reportContent += `所有代码变更都符合质量标准，可以安全提交。\n`
+    } else {
+      // 统计问题
+      const hasIssuesCount = feedback.filter((item) => item.hasIssues).length
+
+      reportContent += `## 审查概览\n\n`
+      reportContent += `- 🔍 **分析文件**: ${feedback.length} 个\n`
+      reportContent += `- ⚠️ **发现问题的文件**: ${hasIssuesCount} 个\n`
+      reportContent += `- ✅ **无问题文件**: ${feedback.length - hasIssuesCount} 个\n\n`
+
+      reportContent += `## 详细分析结果\n\n`
+
+      feedback.forEach((item, index) => {
+        const statusIcon = item.hasIssues ? '⚠️' : '✅'
+        reportContent += `### ${index + 1}. ${statusIcon} ${item.filename}\n\n`
+        reportContent += `${item.analysis}\n\n`
+        reportContent += `---\n\n`
+      })
+    }
+
+    reportContent += `## 说明\n\n`
+    reportContent += `本报告由 AI 代码审查工具自动生成，用于辅助代码质量检查。\n`
+    reportContent += `请结合实际情况判断建议的合理性。\n\n`
+    reportContent += `*生成工具*: @x648525845/ai-codereview\n`
+
+    try {
+      await fs.promises.writeFile(filepath, reportContent, 'utf-8')
+      return { success: true, filepath, filename }
+    } catch (error) {
+      console.error('生成报告文件失败:', error.message)
+      return { success: false, error: error.message }
+    }
+  }
+
+  /**
    * 显示分析结果
    */
-  displayFeedback(feedback) {
+  async displayFeedback(feedback) {
+    let hasIssues = false
+
+    // 检查是否有问题
+    if (feedback.length > 0) {
+      hasIssues = feedback.some((item) => item.hasIssues)
+    }
+
+    // 根据配置选择输出方式
+    if (this.config.outputMode === 'file') {
+      return await this.displayFeedbackAsFile(feedback, hasIssues)
+    } else {
+      return this.displayFeedbackInConsole(feedback, hasIssues)
+    }
+  }
+
+  /**
+   * 在控制台显示分析结果（原有方式）
+   */
+  displayFeedbackInConsole(feedback, hasIssues) {
     if (feedback.length === 0) {
       console.log('✅ 代码分析完成，未发现问题')
       return false
     }
-
-    let hasIssues = false
 
     console.log('\n📋 AI代码审查反馈:')
     console.log('='.repeat(50))
@@ -206,13 +291,39 @@ ${fullContent.length > 2000 ? fullContent.substring(0, 2000) + '...' : fullConte
       console.log(`\n${index + 1}. 📄 ${item.filename}`)
       console.log('-'.repeat(30))
       console.log(item.analysis)
-
-      if (item.hasIssues) {
-        hasIssues = true
-      }
     })
 
     console.log('\n' + '='.repeat(50))
+
+    return hasIssues
+  }
+
+  /**
+   * 生成文件并显示结果
+   */
+  async displayFeedbackAsFile(feedback, hasIssues) {
+    // 生成报告文件
+    const result = await this.generateReportFile(feedback)
+
+    if (result.success) {
+      if (feedback.length === 0) {
+        console.log('✅ 代码分析完成，未发现问题')
+      } else {
+        const hasIssuesCount = feedback.filter((item) => item.hasIssues).length
+        console.log(`\n📋 AI代码审查完成！`)
+        console.log(`📁 分析文件: ${feedback.length} 个`)
+        if (hasIssuesCount > 0) {
+          console.log(`⚠️  发现问题的文件: ${hasIssuesCount} 个`)
+        }
+        console.log(`✅ 无问题文件: ${feedback.length - hasIssuesCount} 个`)
+      }
+      console.log(`\n📄 详细报告已生成: ${result.filename}`)
+      console.log(`📍 文件位置: ${result.filepath}`)
+    } else {
+      console.error(`❌ 生成报告文件失败: ${result.error}`)
+      console.log('\n⚠️  降级到控制台输出:')
+      return this.displayFeedbackInConsole(feedback, hasIssues)
+    }
 
     return hasIssues
   }

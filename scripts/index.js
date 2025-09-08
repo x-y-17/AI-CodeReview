@@ -38,7 +38,7 @@ async function main() {
     }
 
     // 显示反馈
-    const hasIssues = reviewer.displayFeedback(result.feedback)
+    const hasIssues = await reviewer.displayFeedback(result.feedback)
 
     // 总是询问用户是否继续提交
     const shouldContinue = await reviewer.askUserConfirmation(hasIssues)
