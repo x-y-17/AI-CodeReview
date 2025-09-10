@@ -1,18 +1,54 @@
 #!/usr/bin/env node
 
 // scripts/pre-commit-ai-review.js
-import dotenv from 'dotenv'
-import path from 'path'
-import { fileURLToPath } from 'url'
 import AICodeReviewer from './ai-code-review.js'
+import EnvLoader from './env-loader.js'
 
-// 当作为npm包使用时，需要从项目根目录加载.env文件
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const projectRoot = process.cwd()
+// 初始化环境变量加载器
+const envLoader = new EnvLoader()
 
-// 优先从项目根目录加载.env，如果不存在则从包目录加载
-dotenv.config({ path: path.join(projectRoot, '.env') })
-dotenv.config({ path: path.join(currentDir, '../.env') })
+// 检查命令行参数
+const args = process.argv.slice(2)
+const command = args[0]
+
+// 处理特殊命令
+if (command === 'init-config') {
+  try {
+    const globalConfigPath = envLoader.createGlobalConfigTemplate()
+    console.log('✅ 用户全局配置文件创建成功!')
+    console.log(`📍 文件位置: ${globalConfigPath}`)
+    console.log('\n💡 请编辑该文件，填入你的API密钥和配置')
+    process.exit(0)
+  } catch (error) {
+    console.error('❌ 创建用户全局配置文件失败:', error.message)
+    process.exit(1)
+  }
+}
+
+if (command === 'init-node-config') {
+  try {
+    const nodeGlobalConfigPath = envLoader.createNodeGlobalConfigTemplate()
+    console.log('✅ Node.js 全局配置文件创建成功!')
+    console.log(`📍 文件位置: ${nodeGlobalConfigPath}`)
+    console.log('\n💡 请编辑该文件，填入你的API密钥和配置')
+    console.log('⚠️  注意: 此配置需要管理员权限才能修改')
+    process.exit(0)
+  } catch (error) {
+    console.error('❌ 创建 Node.js 全局配置文件失败:', error.message)
+    process.exit(1)
+  }
+}
+
+if (command === 'config-help') {
+  envLoader.displayConfigHelp()
+  process.exit(0)
+}
+
+// 加载环境变量配置
+envLoader.loadConfig({
+  silent: false, // 显示加载信息
+  debug: args.includes('--debug') // 支持调试模式
+})
 
 async function main() {
   // 支持自定义系统提示词

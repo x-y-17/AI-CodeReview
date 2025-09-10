@@ -34,11 +34,47 @@ npm install --save-dev @x648525845/ai-codereview
 
 ### 1. 配置环境变量
 
-复制 `env.template` 文件为 `.env` 并添加你的API密钥和配置：
+#### 方式一：全局配置（推荐）
+
+为了在所有项目中复用配置，建议使用全局配置：
 
 ```bash
-# 复制配置模板
+# 创建全局配置文件
+ai-codereview init-config
+```
+
+这会在你的用户主目录创建 `.ai-codereview.env` 文件，编辑该文件填入你的API密钥：
+
+```bash
+# 编辑全局配置文件
+nano ~/.ai-codereview.env
+```
+
+#### 方式二：项目配置
+
+如果需要在特定项目中覆盖全局配置，可以在项目根目录创建 `.env` 文件：
+
+```bash
+# 复制配置模板到项目根目录
 cp env.template .env
+```
+
+#### 配置优先级
+
+配置文件按以下优先级加载（高优先级覆盖低优先级）：
+
+1. **项目根目录的 `.env` 文件**（最高优先级）
+2. **用户主目录的 `.ai-codereview.env` 文件**（全局配置）
+3. **包目录的 `.env` 文件**（默认配置）
+
+#### 配置帮助
+
+```bash
+# 查看配置说明
+ai-codereview config-help
+
+# 调试模式查看配置加载过程
+ai-codereview --debug
 ```
 
 推荐使用 **DeepSeek** 配置（性价比高，效果好）：
@@ -162,6 +198,117 @@ git commit -m "你的提交信息"
 ```
 
 更多 Husky 配置和使用方法，请参考：[Husky 官方文档](https://typicode.github.io/husky/)
+
+## 全局配置详解
+
+### 为什么使用全局配置？
+
+全局配置让你可以在所有项目中使用相同的API密钥和基础配置，避免在每个项目中重复配置：
+
+- ✅ **一次配置，到处使用**：在用户主目录配置一次，所有项目都能使用
+- ✅ **项目级覆盖**：特定项目可以创建 `.env` 文件覆盖全局配置
+- ✅ **配置优先级**：项目配置 > 全局配置 > 默认配置
+- ✅ **安全性**：全局配置文件位于用户主目录，不会被意外提交到代码仓库
+
+### 创建全局配置
+
+```bash
+# 创建全局配置文件模板
+ai-codereview init-config
+```
+
+这会在你的用户主目录创建 `.ai-codereview.env` 文件，内容如下：
+
+```env
+# AI-CodeReview 全局配置文件
+# 此文件位于用户主目录，所有项目都会使用此配置
+# 如果项目根目录有 .env 文件，则项目配置优先
+
+# ===========================================
+# 必须配置 - API密钥
+# ===========================================
+
+# DeepSeek API密钥（推荐使用）
+API_KEY=你的DeepSeek_API密钥
+# 或者使用 DeepSeek 专用的环境变量
+DEEPSEEK_API_KEY=你的DeepSeek_API密钥
+
+# 也可以使用其他AI服务的API密钥
+# MOONSHOT_API_KEY=你的Moonshot_API密钥
+# OPENAI_API_KEY=你的OpenAI_API密钥
+
+# ===========================================
+# AI服务配置（可选）
+# ===========================================
+
+# DeepSeek API 配置（默认推荐）
+AI_BASE_URL=https://api.deepseek.com/v1
+AI_MODEL=deepseek-chat
+AI_MAX_TOKENS=2000
+AI_TEMPERATURE=0.3
+
+# 输出模式配置（可选）
+# file: 生成Markdown报告文件（默认）
+# console: 控制台输出
+AI_OUTPUT_MODE=file
+
+# 版本控制系统类型（可选）
+# git: Git版本控制（默认）
+# svn: SVN版本控制
+VCS_TYPE=git
+
+# 自定义AI审查提示词（可选）
+# AI_REVIEW_SYSTEM_PROMPT=你是一个专业的代码审查专家。请分析提供的代码变更，重点关注代码质量、安全问题、性能优化和最佳实践。请用中文回复。
+```
+
+### 编辑全局配置
+
+```bash
+# 使用你喜欢的编辑器编辑全局配置文件
+nano ~/.ai-codereview.env
+# 或者
+code ~/.ai-codereview.env
+# 或者
+vim ~/.ai-codereview.env
+```
+
+### 配置优先级示例
+
+假设你有以下配置：
+
+**全局配置** (`~/.ai-codereview.env`):
+
+```env
+API_KEY=global_api_key
+AI_MODEL=deepseek-chat
+AI_MAX_TOKENS=2000
+```
+
+**项目配置** (`项目根目录/.env`):
+
+```env
+API_KEY=project_specific_api_key
+AI_TEMPERATURE=0.5
+```
+
+**最终生效的配置**:
+
+```env
+API_KEY=project_specific_api_key  # 来自项目配置
+AI_MODEL=deepseek-chat            # 来自全局配置
+AI_MAX_TOKENS=2000                # 来自全局配置
+AI_TEMPERATURE=0.5                # 来自项目配置
+```
+
+### 配置调试
+
+```bash
+# 查看配置加载过程
+ai-codereview --debug
+
+# 查看配置帮助信息
+ai-codereview config-help
+```
 
 #### 使用SVN版本控制
 
