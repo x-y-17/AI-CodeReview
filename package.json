@@ -1,6 +1,6 @@
 {
   "name": "@x648525845/ai-codereview",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "AI驱动的代码审查工具，支持Git hooks集成，提供智能代码质量分析和反馈",
   "main": "index.js",
   "types": "index.d.ts",

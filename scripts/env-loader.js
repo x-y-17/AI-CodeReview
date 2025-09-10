@@ -299,8 +299,8 @@ VCS_TYPE=git
 `
 
     try {
-      fs.writeFileSync(globalConfigPath, templateContent, 'utf-8')
-      return globalConfigPath
+      fs.writeFileSync(configPath, templateContent, 'utf-8')
+      return configPath
     } catch (error) {
       throw new Error(`创建全局配置文件失败: ${error.message}`)
     }
