@@ -425,3 +425,8 @@ MIT License
 - ⚙️ **新增配置选项**: `outputMode` 和 `AI_OUTPUT_MODE` 环境变量
 - 🎨 **优化报告格式**: 包含统计信息、问题标识和时间戳
 - 🔧 **改进API**: `displayFeedback` 方法现在是异步的，支持文件生成
+
+### v1.4.0
+
+- 未检测到修改文件时不会输出review结果文件
+- 支持svn
