@@ -30,44 +30,6 @@ npm install --save-dev @x648525845/ai-codereview
 
 需要 Node.js >= 18
 
-## 配置 Git Hooks (Husky)
-
-本工具推荐使用 [Husky](https://typicode.github.io/husky/) 来管理 Git hooks。
-
-### 初始化 Husky
-
-如果项目还没有配置 Husky，请先初始化：
-
-```bash
-# 安装 husky
-npm install --save-dev husky
-
-# 初始化 husky
-npx husky install
-
-# 设置 package.json 脚本（可选，用于自动安装）
-npm pkg set scripts.prepare="husky install"
-```
-
-### 添加 pre-commit hook
-
-```bash
-# 添加 pre-commit hook
-npx husky add .husky/pre-commit "npx @x648525845/ai-codereview"
-```
-
-**重要提示：** 确保 hook 脚本具有正确的退出码处理。如果你遇到提交无法被阻止的问题，可以在 `.husky/pre-commit` 文件中添加：
-
-```bash
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-npx @x648525845/ai-codereview
-exit $?
-```
-
-更多 Husky 配置和使用方法，请参考：[Husky 官方文档](https://typicode.github.io/husky/)
-
 ## 快速开始
 
 ### 1. 配置环境变量
@@ -98,15 +60,80 @@ AI_OUTPUT_MODE=file                             # 输出方式：file(生成文�
 > - API密钥优先级：构造函数参数 > `API_KEY` 环境变量 > `MOONSHOT_API_KEY` 环境变量
 > - 其他配置参数优先级：构造函数参数 > 对应环境变量 > 默认值
 
-### 2. 使用
+### 2. 使用方式
 
-现在每次提交代码时，AI会自动分析你的变更：
+#### 方式一：直接命令行使用（推荐）
+
+直接在终端使用 npx 命令进行代码审查：
+
+```bash
+# 在项目目录下直接运行
+npx @x648525845/ai-codereview
+
+# 或者全局安装后使用
+npm install -g @x648525845/ai-codereview
+ai-codereview
+```
+
+这种方式适合：
+
+- 手动触发代码审查
+- 在CI/CD流水线中使用
+- 临时性的代码质量检查
+
+#### 方式二：Git Hooks 自动化集成
+
+通过 Git hooks 实现自动化代码审查，每次提交时自动触发。
+
+##### 使用 Husky 管理 Git Hooks（推荐）
+
+本工具推荐使用 [Husky](https://typicode.github.io/husky/) 来管理 Git hooks。
+
+**1. 初始化 Husky**
+
+如果项目还没有配置 Husky，请先初始化：
+
+```bash
+# 安装 husky
+npm install --save-dev husky
+
+# 初始化 husky
+npx husky install
+
+# 设置 package.json 脚本（可选，用于自动安装）
+npm pkg set scripts.prepare="husky install"
+```
+
+**2. 添加 pre-commit hook**
+
+```bash
+# 添加 pre-commit hook
+npx husky add .husky/pre-commit "npx @x648525845/ai-codereview"
+```
+
+**3. 确保正确的退出码处理**
+
+如果遇到提交无法被阻止的问题，请在 `.husky/pre-commit` 文件中添加正确的退出码处理：
+
+```bash
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx @x648525845/ai-codereview
+exit $?
+```
+
+**4. 使用效果**
+
+配置完成后，每次提交代码时会自动执行AI审查：
 
 ```bash
 git add .
 git commit -m "你的提交信息"
-# AI代码审查会自动执行
+# AI代码审查会自动执行，有问题时会阻止提交
 ```
+
+更多 Husky 配置和使用方法，请参考：[Husky 官方文档](https://typicode.github.io/husky/)
 
 ### 输出方式
 
