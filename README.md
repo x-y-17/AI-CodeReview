@@ -5,7 +5,7 @@
 ## 功能特性
 
 - 🔍 **智能代码分析**: 使用AI模型分析代码变更，识别潜在问题
-- 🚀 **Git Hooks集成**: 无缝集成到Git工作流，在提交前自动执行代码审查
+- 🚀 **多版本控制系统支持**: 支持Git和SVN版本控制系统，Git可集成hooks自动化
 - 🌟 **支持多种AI服务**: 默认推荐DeepSeek（性价比高），同时支持Moonshot、OpenAI等兼容服务
 - 📋 **详细反馈报告**: 提供代码质量、安全性、性能等多维度分析
 - 📄 **多种输出方式**: 支持生成Markdown报告文件或控制台输出
@@ -55,6 +55,9 @@ AI_TEMPERATURE=0.3                              # 温度参数 (0-1)
 
 # 可选：自定义AI审查提示词
 AI_REVIEW_SYSTEM_PROMPT=你的自定义提示词内容
+
+# 可选：版本控制系统配置
+VCS_TYPE=git                                    # 版本控制系统：git(默认) 或 svn
 
 # 可选：输出模式配置
 AI_OUTPUT_MODE=file                             # 输出方式：file(生成文件，默认) 或 console(控制台输出)
@@ -160,6 +163,37 @@ git commit -m "你的提交信息"
 
 更多 Husky 配置和使用方法，请参考：[Husky 官方文档](https://typicode.github.io/husky/)
 
+#### 使用SVN版本控制
+
+如果您的项目使用SVN版本控制系统，请按以下步骤配置：
+
+**1. 配置环境变量**
+
+在 `.env` 文件中设置：
+
+```env
+VCS_TYPE=svn
+```
+
+**2. 使用方式**
+
+SVN模式下，工具会分析所有修改状态的文件（包括M、A、D状态）：
+
+```bash
+# 修改文件后直接运行分析
+svn status  # 查看修改的文件
+npx @x648525845/ai-codereview  # 分析修改的文件
+
+# 或者全局安装后使用
+ai-codereview
+```
+
+**注意事项：**
+
+- SVN模式下不支持hooks自动化（SVN hooks机制与Git不同）
+- 工具会分析所有处于修改状态的文件，无需手动添加到暂存区
+- 建议在提交前手动运行代码审查
+
 ### 输出方式
 
 工具支持两种输出方式：
@@ -213,6 +247,7 @@ AI_OUTPUT_MODE=console
 - `AI_MAX_TOKENS`: 最大token数量（可选，默认：2000）
 - `AI_TEMPERATURE`: 温度参数（可选，默认：0.3）
 - `AI_REVIEW_SYSTEM_PROMPT`: 自定义AI审查提示词（可选，如不设置则使用默认提示词）
+- `VCS_TYPE`: 版本控制系统类型（可选，默认：git，可选值：git/svn）
 - `AI_OUTPUT_MODE`: 输出方式（可选，默认：file，可选值：file/console）
 
 ## 编程方式使用
@@ -222,24 +257,26 @@ AI_OUTPUT_MODE=console
 ```javascript
 import { AICodeReviewer } from 'ai-codereview'
 
-// 使用默认配置
+// 使用默认配置（自动检测Git/SVN）
 const reviewer = new AICodeReviewer()
 
-// 自定义配置（使用DeepSeek）
+// 自定义配置（使用DeepSeek + SVN）
 const customReviewer = new AICodeReviewer({
   systemPrompt: '你是一个专注于安全性的代码审查专家，请特别关注安全漏洞和潜在威胁...',
   baseURL: 'https://api.deepseek.com/v1', // 使用DeepSeek服务
   model: 'deepseek-chat', // DeepSeek模型
   maxTokens: 2000, // token限制
   temperature: 0.1, // 降低随机性
-  outputMode: 'console' // 设置输出方式：'file' 或 'console'
+  outputMode: 'console', // 设置输出方式：'file' 或 'console'
+  vcsType: 'svn' // 指定使用SVN版本控制
 })
 
 // 使用其他AI服务的示例
 const openaiReviewer = new AICodeReviewer({
   baseURL: 'https://api.openai.com/v1',
   model: 'gpt-4',
-  apiKey: 'your-openai-key'
+  apiKey: 'your-openai-key',
+  vcsType: 'git' // 明确指定Git
 })
 
 // 显示当前配置
@@ -274,27 +311,30 @@ new AICodeReviewer(options)
   - `maxTokens` (Number, 可选): 最大token数量。默认: `2000`
   - `temperature` (Number, 可选): 温度参数 (0-1)。默认: `0.3`
   - `outputMode` (String, 可选): 输出方式。可选值: `'file'`(生成文件，默认) 或 `'console'`(控制台输出)
+  - `vcsType` (String, 可选): 版本控制系统类型。可选值: `'git'`(默认) 或 `'svn'`
 
 #### 方法
 
-- `analyzeChanges()`: 分析Git暂存区的代码变更
+- `analyzeChanges()`: 分析版本控制系统中的代码变更（Git暂存区或SVN修改文件）
 - `analyzeFile(filename)`: 分析单个文件
 - `displayFeedback(feedback)`: 显示分析反馈（异步方法，根据配置选择文件或控制台输出）
 - `generateReportFile(feedback)`: 生成Markdown格式的审查报告文件
 - `askUserConfirmation(hasIssues)`: 询问用户是否继续提交
 - `getConfig()`: 获取当前配置信息
-- `displayConfig()`: 显示当前配置信息
+- `displayConfig()`: 显示当前配置信息（包括VCS信息）
 
-### GitUtils
+### VcsUtils
 
-Git操作工具类。
+版本控制系统工具类，支持Git和SVN。
 
 #### 方法
 
-- `getStagedFiles()`: 获取暂存区文件列表
-- `getFileDiff(filename)`: 获取文件的diff
+- `getStagedFiles()`: 获取需要分析的文件列表（Git暂存区或SVN修改文件）
+- `getFileDiff(filename)`: 获取文件的差异内容
 - `getFileContent(filename)`: 获取文件完整内容
 - `filterRelevantFiles(files)`: 过滤相关的代码文件
+- `getVcsType()`: 获取当前使用的版本控制系统类型
+- `displayVcsInfo()`: 显示版本控制系统信息
 
 ## 配置
 

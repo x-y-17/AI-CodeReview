@@ -1,10 +1,10 @@
 // scripts/ai-code-review.js
 import OpenAI from 'openai'
-import GitUtils from './git-utils.js'
+import VcsUtils from './vcs-utils.js'
 
 class AICodeReviewer {
   constructor(options = {}) {
-    this.gitUtils = new GitUtils()
+    this.vcsUtils = new VcsUtils(options)
 
     // 设置系统提示词
     this.systemPrompt = options.systemPrompt || this.getDefaultSystemPrompt()
@@ -70,6 +70,10 @@ class AICodeReviewer {
     console.log(`   Max Tokens: ${config.maxTokens}`)
     console.log(`   Temperature: ${config.temperature}`)
     console.log(`   API Key: ${config.hasApiKey ? '已配置' : '未配置'}`)
+    console.log(`   Output Mode: ${this.config.outputMode}`)
+
+    // 显示VCS信息
+    this.vcsUtils.displayVcsInfo()
   }
 
   /**
@@ -78,14 +82,14 @@ class AICodeReviewer {
   async analyzeChanges() {
     console.log('🔍 正在分析代码变更...')
 
-    const stagedFiles = this.gitUtils.getStagedFiles()
+    const stagedFiles = this.vcsUtils.getStagedFiles()
 
     if (stagedFiles.length === 0) {
       console.log('ℹ️  没有检测到代码变更')
       return { success: true, feedback: [] }
     }
 
-    const relevantFiles = this.gitUtils.filterRelevantFiles(stagedFiles)
+    const relevantFiles = this.vcsUtils.filterRelevantFiles(stagedFiles)
 
     if (relevantFiles.length === 0) {
       console.log('ℹ️  没有需要分析的代码文件')
@@ -114,8 +118,8 @@ class AICodeReviewer {
    * 分析单个文件
    */
   async analyzeFile(filename) {
-    const diff = this.gitUtils.getFileDiff(filename)
-    const fullContent = this.gitUtils.getFileContent(filename)
+    const diff = this.vcsUtils.getFileDiff(filename)
+    const fullContent = this.vcsUtils.getFileContent(filename)
 
     if (!diff) {
       return null
