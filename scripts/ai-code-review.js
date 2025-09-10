@@ -11,10 +11,10 @@ class AICodeReviewer {
 
     // 配置 AI 模型参数 - 支持环境变量和构造函数参数
     this.config = {
-      apiKey: options.apiKey || process.env.API_KEY || process.env.MOONSHOT_API_KEY,
-      baseURL: options.baseURL || process.env.AI_BASE_URL || 'https://api.moonshot.cn/v1',
-      model: options.model || process.env.AI_MODEL || 'moonshot-v1-8k',
-      maxTokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 1000,
+      apiKey: options.apiKey || process.env.API_KEY || process.env.DEEPSEEK_API_KEY || process.env.MOONSHOT_API_KEY,
+      baseURL: options.baseURL || process.env.AI_BASE_URL || 'https://api.deepseek.com/v1',
+      model: options.model || process.env.AI_MODEL || 'deepseek-chat',
+      maxTokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 2000,
       temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.3,
       // 输出模式配置：'file' 生成文件（默认），'console' 控制台输出
       outputMode: options.outputMode || process.env.AI_OUTPUT_MODE || 'file'
@@ -302,21 +302,23 @@ ${fullContent.length > 2000 ? fullContent.substring(0, 2000) + '...' : fullConte
    * 生成文件并显示结果
    */
   async displayFeedbackAsFile(feedback, hasIssues) {
-    // 生成报告文件
+    // 如果没有反馈内容，只在控制台显示，不生成文件
+    if (feedback.length === 0) {
+      console.log('✅ 代码分析完成，无修改，未发现问题')
+      return false
+    }
+
+    // 有反馈内容时才生成报告文件
     const result = await this.generateReportFile(feedback)
 
     if (result.success) {
-      if (feedback.length === 0) {
-        console.log('✅ 代码分析完成，未发现问题')
-      } else {
-        const hasIssuesCount = feedback.filter((item) => item.hasIssues).length
-        console.log(`\n📋 AI代码审查完成！`)
-        console.log(`📁 分析文件: ${feedback.length} 个`)
-        if (hasIssuesCount > 0) {
-          console.log(`⚠️  发现问题的文件: ${hasIssuesCount} 个`)
-        }
-        console.log(`✅ 无问题文件: ${feedback.length - hasIssuesCount} 个`)
+      const hasIssuesCount = feedback.filter((item) => item.hasIssues).length
+      console.log(`\n📋 AI代码审查完成！`)
+      console.log(`📁 分析文件: ${feedback.length} 个`)
+      if (hasIssuesCount > 0) {
+        console.log(`⚠️  发现问题的文件: ${hasIssuesCount} 个`)
       }
+      console.log(`✅ 无问题文件: ${feedback.length - hasIssuesCount} 个`)
       console.log(`\n📄 详细报告已生成: ${result.filename}`)
       console.log(`📍 文件位置: ${result.filepath}`)
     } else {

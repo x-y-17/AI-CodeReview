@@ -6,7 +6,7 @@
 
 - 🔍 **智能代码分析**: 使用AI模型分析代码变更，识别潜在问题
 - 🚀 **Git Hooks集成**: 无缝集成到Git工作流，在提交前自动执行代码审查
-- 🌟 **支持多种AI服务**: 默认支持Moonshot Kimi，可扩展其他OpenAI兼容服务
+- 🌟 **支持多种AI服务**: 默认推荐DeepSeek（性价比高），同时支持Moonshot、OpenAI等兼容服务
 - 📋 **详细反馈报告**: 提供代码质量、安全性、性能等多维度分析
 - 📄 **多种输出方式**: 支持生成Markdown报告文件或控制台输出
 - 🛠️ **高度可配置**: 支持自定义分析规则和反馈格式
@@ -34,18 +34,23 @@ npm install --save-dev @x648525845/ai-codereview
 
 ### 1. 配置环境变量
 
-创建 `.env` 文件并添加你的API密钥和配置：
+复制 `env.template` 文件为 `.env` 并添加你的API密钥和配置：
+
+```bash
+# 复制配置模板
+cp env.template .env
+```
+
+推荐使用 **DeepSeek** 配置（性价比高，效果好）：
 
 ```env
-# 必须配置 - API密钥 (优先使用 API_KEY，如未设置则使用 MOONSHOT_API_KEY)
-API_KEY=你的AI服务API密钥
-# 或者使用 Moonshot 专用的环境变量
-MOONSHOT_API_KEY=你的Moonshot API密钥
+# 必须配置 - API密钥
+API_KEY=你的API密钥
 
-# 可选配置 - AI模型参数
-AI_BASE_URL=https://api.moonshot.cn/v1          # AI服务基础URL
-AI_MODEL=moonshot-v1-8k                         # 使用的模型名称
-AI_MAX_TOKENS=1000                              # 最大token数量
+# DeepSeek API 配置（推荐）
+AI_BASE_URL=https://api.deepseek.com/v1         # DeepSeek API地址
+AI_MODEL=deepseek-chat                          # DeepSeek 模型
+AI_MAX_TOKENS=2000                              # 最大token数量
 AI_TEMPERATURE=0.3                              # 温度参数 (0-1)
 
 # 可选：自定义AI审查提示词
@@ -55,10 +60,30 @@ AI_REVIEW_SYSTEM_PROMPT=你的自定义提示词内容
 AI_OUTPUT_MODE=file                             # 输出方式：file(生成文件，默认) 或 console(控制台输出)
 ```
 
+**其他支持的AI服务：**
+
+```env
+# Moonshot 配置
+# AI_BASE_URL=https://api.moonshot.cn/v1
+# AI_MODEL=moonshot-v1-8k
+# MOONSHOT_API_KEY=你的Moonshot_API密钥
+
+# OpenAI 配置
+# AI_BASE_URL=https://api.openai.com/v1
+# AI_MODEL=gpt-4
+# OPENAI_API_KEY=你的OpenAI_API密钥
+```
+
 > **配置优先级说明：**
 >
-> - API密钥优先级：构造函数参数 > `API_KEY` 环境变量 > `MOONSHOT_API_KEY` 环境变量
+> - API密钥优先级：构造函数参数 > `API_KEY` 环境变量 > 服务专用环境变量（如 `DEEPSEEK_API_KEY`、`MOONSHOT_API_KEY`）
 > - 其他配置参数优先级：构造函数参数 > 对应环境变量 > 默认值
+>
+> **获取API密钥：**
+>
+> - DeepSeek: [https://platform.deepseek.com/](https://platform.deepseek.com/)
+> - Moonshot: [https://platform.moonshot.cn/](https://platform.moonshot.cn/)
+> - OpenAI: [https://platform.openai.com/](https://platform.openai.com/)
 
 ### 2. 使用方式
 
@@ -183,10 +208,9 @@ AI_OUTPUT_MODE=console
 ## 环境变量配置总结
 
 - `API_KEY`: 通用AI服务API密钥（推荐使用）
-- `MOONSHOT_API_KEY`: Moonshot API密钥（如果未设置 API_KEY 则使用此项）
-- `AI_BASE_URL`: AI服务基础URL（可选，默认：https://api.moonshot.cn/v1）
-- `AI_MODEL`: 使用的模型名称（可选，默认：moonshot-v1-8k）
-- `AI_MAX_TOKENS`: 最大token数量（可选，默认：1000）
+- `AI_BASE_URL`: AI服务基础URL（可选，默认：https://api.deepseek.com/v1）
+- `AI_MODEL`: 使用的模型名称（可选，默认：deepseek-chat）
+- `AI_MAX_TOKENS`: 最大token数量（可选，默认：2000）
 - `AI_TEMPERATURE`: 温度参数（可选，默认：0.3）
 - `AI_REVIEW_SYSTEM_PROMPT`: 自定义AI审查提示词（可选，如不设置则使用默认提示词）
 - `AI_OUTPUT_MODE`: 输出方式（可选，默认：file，可选值：file/console）
@@ -201,14 +225,21 @@ import { AICodeReviewer } from 'ai-codereview'
 // 使用默认配置
 const reviewer = new AICodeReviewer()
 
-// 自定义配置
+// 自定义配置（使用DeepSeek）
 const customReviewer = new AICodeReviewer({
   systemPrompt: '你是一个专注于安全性的代码审查专家，请特别关注安全漏洞和潜在威胁...',
-  baseURL: 'https://api.openai.com/v1', // 使用其他AI服务
-  model: 'gpt-4', // 使用不同模型
-  maxTokens: 2000, // 增加token限制
+  baseURL: 'https://api.deepseek.com/v1', // 使用DeepSeek服务
+  model: 'deepseek-chat', // DeepSeek模型
+  maxTokens: 2000, // token限制
   temperature: 0.1, // 降低随机性
   outputMode: 'console' // 设置输出方式：'file' 或 'console'
+})
+
+// 使用其他AI服务的示例
+const openaiReviewer = new AICodeReviewer({
+  baseURL: 'https://api.openai.com/v1',
+  model: 'gpt-4',
+  apiKey: 'your-openai-key'
 })
 
 // 显示当前配置
@@ -238,9 +269,9 @@ new AICodeReviewer(options)
 - `options` (Object, 可选): 配置选项
   - `systemPrompt` (String, 可选): 自定义系统提示词。如果不提供，将使用默认的代码审查提示词。
   - `apiKey` (String, 可选): AI服务API密钥。如果不提供，将使用环境变量 `API_KEY`。
-  - `baseURL` (String, 可选): AI服务基础URL。默认: `https://api.moonshot.cn/v1`
-  - `model` (String, 可选): 使用的AI模型名称。默认: `moonshot-v1-8k`
-  - `maxTokens` (Number, 可选): 最大token数量。默认: `1000`
+  - `baseURL` (String, 可选): AI服务基础URL。默认: `https://api.deepseek.com/v1`
+  - `model` (String, 可选): 使用的AI模型名称。默认: `deepseek-chat`
+  - `maxTokens` (Number, 可选): 最大token数量。默认: `2000`
   - `temperature` (Number, 可选): 温度参数 (0-1)。默认: `0.3`
   - `outputMode` (String, 可选): 输出方式。可选值: `'file'`(生成文件，默认) 或 `'console'`(控制台输出)
 
