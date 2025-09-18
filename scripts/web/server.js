@@ -30,9 +30,6 @@ export class WebServer {
 
     // 静态文件服务
     const publicPath = path.join(__dirname, 'public')
-    console.log('🚀 ~ WebServer ~ setupMiddleware ~ publicPath:', publicPath)
-    const frontendPath = path.join(__dirname, 'frontend')
-    console.log('🚀 ~ WebServer ~ setupMiddleware ~ frontendPath:', frontendPath)
 
     // 检查是否存在构建后的public目录
     if (existsSync(publicPath)) {

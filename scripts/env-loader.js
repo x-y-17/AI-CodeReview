@@ -284,9 +284,7 @@ AI_MODEL=deepseek-chat
 # AI_TEMPERATURE=0.3
 
 # 输出模式配置（可选）
-# file: 生成Markdown报告文件（默认）
-# console: 控制台输出
-AI_OUTPUT_MODE=file
+AI_OUTPUT_MODE=web
 
 # 版本控制系统类型（可选）
 # git: Git版本控制（默认）
