@@ -20,7 +20,7 @@ class AICodeReviewer {
       outputMode: options.outputMode || process.env.AI_OUTPUT_MODE || 'web',
       // Web界面配置
       webUI: options.webUI !== false && process.env.WEB_UI_ENABLED !== 'false',
-      webPort: options.webPort || parseInt(process.env.WEB_UI_PORT) || 3000,
+      webPort: options.webPort || parseInt(process.env.WEB_UI_PORT) || 8155,
       autoOpenBrowser: options.autoOpenBrowser !== false && process.env.WEB_UI_AUTO_OPEN !== 'false'
     }
 

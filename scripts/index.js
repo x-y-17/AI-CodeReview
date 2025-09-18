@@ -16,23 +16,35 @@ const parseArgs = (args) => {
   const options = {}
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
-    if (arg === '--web') {
-      options.outputMode = 'web'
-      options.webUI = true
-    } else if (arg === '--file') {
-      options.outputMode = 'file'
-      options.webUI = false
-    } else if (arg === '--console') {
-      options.outputMode = 'console'
-      options.webUI = false
-    } else if (arg === '--web-port') {
-      options.webPort = parseInt(args[++i])
-    } else if (arg === '--no-browser') {
-      options.autoOpenBrowser = false
-    } else if (arg === '--output-mode') {
-      options.outputMode = args[++i]
-    } else if (arg === '--debug') {
-      options.debug = true
+    switch (arg) {
+      case '--web':
+        options.outputMode = 'web'
+        options.webUI = true
+        break
+      case '--file':
+        options.outputMode = 'file'
+        options.webUI = false
+        break
+      case '--console':
+        options.outputMode = 'console'
+        options.webUI = false
+        break
+      case '--web-port':
+        options.webPort = parseInt(args[++i])
+        break
+      case '--no-browser':
+        options.autoOpenBrowser = false
+        break
+      case '--output-mode':
+        options.outputMode = args[++i]
+        break
+      case '--debug':
+        options.debug = true
+        break
+      default:
+        options.outputMode = 'web'
+        options.webUI = true
+        break
     }
   }
   return options
@@ -87,7 +99,7 @@ if (command === 'help' || command === '--help' || command === '-h') {
   console.log('  --output-mode <mode>            # 指定输出模式: web, file, console')
   console.log('')
   console.log('Web界面选项:')
-  console.log('  --web-port <port>               # 指定Web服务器端口 (默认: 3000)')
+  console.log('  --web-port <port>               # 指定Web服务器端口 (默认: 8155)')
   console.log('  --no-browser                    # 不自动打开浏览器')
   console.log('')
   console.log('配置命令:')

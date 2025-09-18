@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename)
 
 export class WebServer {
   constructor(options = {}) {
-    this.port = options.port || 3000
+    this.port = options.port || 8155
     this.autoOpen = options.autoOpen !== false
     this.reviewData = null
 
