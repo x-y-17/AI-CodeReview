@@ -16,8 +16,12 @@ class AICodeReviewer {
       model: options.model || process.env.AI_MODEL || 'deepseek-chat',
       maxTokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 2000,
       temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.3,
-      // 输出模式配置：'file' 生成文件（默认），'console' 控制台输出
-      outputMode: options.outputMode || process.env.AI_OUTPUT_MODE || 'file'
+      // 输出模式配置：'web' Web界面（默认），'file' 生成文件, 'console' 控制台输出
+      outputMode: options.outputMode || process.env.AI_OUTPUT_MODE || 'web',
+      // Web界面配置
+      webUI: options.webUI !== false && process.env.WEB_UI_ENABLED !== 'false',
+      webPort: options.webPort || parseInt(process.env.WEB_UI_PORT) || 3000,
+      autoOpenBrowser: options.autoOpenBrowser !== false && process.env.WEB_UI_AUTO_OPEN !== 'false'
     }
 
     // 尝试初始化AI客户端
@@ -71,6 +75,14 @@ class AICodeReviewer {
     console.log(`   Temperature: ${config.temperature}`)
     console.log(`   API Key: ${config.hasApiKey ? '已配置' : '未配置'}`)
     console.log(`   Output Mode: ${this.config.outputMode}`)
+
+    // 显示Web界面配置
+    if (this.config.webUI) {
+      console.log('🌐 Web界面配置:')
+      console.log(`   启用状态: ${this.config.webUI ? '已启用' : '未启用'}`)
+      console.log(`   端口: ${this.config.webPort}`)
+      console.log(`   自动打开浏览器: ${this.config.autoOpenBrowser ? '是' : '否'}`)
+    }
 
     // 显示VCS信息
     this.vcsUtils.displayVcsInfo()
@@ -152,7 +164,8 @@ class AICodeReviewer {
       return {
         filename,
         analysis: response.choices[0].message.content,
-        hasIssues: this.detectIssues(response.choices[0].message.content)
+        hasIssues: this.detectIssues(response.choices[0].message.content),
+        diff: diff // 添加diff信息
       }
     } catch (error) {
       console.error(`AI分析失败 (${filename}):`, error.message)
@@ -271,8 +284,11 @@ ${fullContent.length > 2000 ? fullContent.substring(0, 2000) + '...' : fullConte
       hasIssues = feedback.some((item) => item.hasIssues)
     }
 
-    // 根据配置选择输出方式
-    if (this.config.outputMode === 'file') {
+    // 根据配置选择输出方式，默认为Web界面
+    if (this.config.outputMode === 'web' && this.config.webUI) {
+      await this.displayFeedbackAsWeb(feedback, hasIssues)
+      return hasIssues
+    } else if (this.config.outputMode === 'file') {
       return await this.displayFeedbackAsFile(feedback, hasIssues)
     } else {
       return this.displayFeedbackInConsole(feedback, hasIssues)
@@ -332,6 +348,63 @@ ${fullContent.length > 2000 ? fullContent.substring(0, 2000) + '...' : fullConte
     }
 
     return hasIssues
+  }
+
+  /**
+   * 启动Web界面显示结果
+   */
+  async displayFeedbackAsWeb(feedback, hasIssues) {
+    try {
+      console.log('\n🌐 启动Web界面...')
+
+      // 动态导入Web模块
+      const { WebServer } = await import('./web/server.js')
+      const { DataProcessor } = await import('./web/data-processor.js')
+
+      // 处理数据
+      const processedData = DataProcessor.processReviewResults(feedback, {
+        version: '1.5.2',
+        timestamp: new Date().toISOString(),
+        hasIssues
+      })
+
+      // 创建并启动Web服务器
+      const server = new WebServer({
+        port: this.config.webPort,
+        autoOpen: this.config.autoOpenBrowser
+      })
+
+      // 设置审查数据
+      server.setReviewData(processedData)
+
+      // 启动服务器
+      await server.start()
+
+      console.log('\n💡 提示:')
+      console.log('   - 在Web界面中查看详细的审查结果')
+      console.log('   - 可以导出报告或继续提交代码')
+      console.log('   - 关闭浏览器标签页不会停止服务器')
+      console.log('   - 按 Ctrl+C 可停止服务器\n')
+
+      // 保存服务器引用以便后续停止
+      this.webServer = server
+    } catch (error) {
+      console.error('❌ 启动Web界面失败:', error.message)
+      console.log('⚠️  降级到文件输出模式')
+
+      // 降级到文件输出
+      return await this.displayFeedbackAsFile(feedback, hasIssues)
+    }
+  }
+
+  /**
+   * 停止Web服务器
+   */
+  async stopWebServer() {
+    if (this.webServer) {
+      await this.webServer.stop()
+      this.webServer = null
+    }
   }
 
   /**

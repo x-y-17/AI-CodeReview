@@ -11,7 +11,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:prepare": "husky install",
-    "prepublishOnly": "echo 'Preparing for publish...'"
+    "prepublishOnly": "echo 'Preparing for publish...'",
+    "web:dev": "cd scripts/web/frontend && npm run dev",
+    "web:build": "cd scripts/web/frontend && npm run build",
+    "web:install": "cd scripts/web/frontend && npm install"
   },
   "keywords": [
     "ai",
@@ -48,7 +51,11 @@
   "dependencies": {
     "openai": "^5.13.1",
     "simple-git": "^3.28.0",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "compression": "^1.7.4",
+    "open": "^8.4.0"
   },
   "devDependencies": {
     "husky": "^9.1.7",
